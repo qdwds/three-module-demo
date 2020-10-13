@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正方形</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body onload="init()">
+</body>
+
+</html>
+
+
+<script src="../js/three.min.js"></script>
+<script src="../js/stats.min.js"></script>
+<script>
+    const {
+        WebGLRenderer,
+        Scene,
+        PerspectiveCamera,
+        BoxGeometry,
+        TextureLoader,
+        MeshNormalMaterial,
+        MeshBasicMaterial,
+        Mesh
+    } = THREE;
+    //  定义全局变量
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let stats = null;
+
+    //  渲染器
+    function initRender(params) {
+        //  实例化渲染器
+        renderer = new WebGLRenderer();
+        //  设置宽高
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        //  添加到dom上
+        document.body.appendChild(renderer.domElement)
+    }
+    // 场景
+    function initScene() {
+        scene = new Scene()
+    }
+    //  相机
+    function initCamera(){
+        //  实例话相机
+        camera = new PerspectiveCamera(45,window.innerWidth / innerHeight,0.1,200);
+        camera.position.set(0,0,15)
+    }
+    //  创建模型
+    function initMesk() {
+        //  创建一个几何图形 正方形
+        geometry = new BoxGeometry(2,2,2);
+        //  创建材质
+        const textureLoader = new TextureLoader()
+        const boxTextureLoader = textureLoader.load('../images/xz.jpeg')
+        material = new MeshBasicMaterial({map:boxTextureLoader});
+        // material = new THREE.MeshNormalMaterial(); //自动创建颜色
+        //  创建网格
+        mesh  = new Mesh(geometry,material);
+        //  把网格 添加到场景
+        scene.add(mesh)
+    }
+    //  动画
+    function animation() {
+        requestAnimationFrame(animation);
+        mesh.rotation.x += 0.01
+        mesh.rotation.y += 0.01
+        mesh.rotation.z += 0.01
+        stats.update(); //更新性能检测框
+        renderer.render(scene,camera)
+    }
+    //  新能检测
+    function initStats() {
+        stats = new Stats();
+        console.log(stats);
+        document.body.appendChild(stats.dom)
+    }
+    function  init() {
+        initRender()
+        initScene()
+        initCamera()
+        initMesk()
+        initStats()
+        animation()
+    }
+</script>
