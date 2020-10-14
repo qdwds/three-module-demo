@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正方形</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body onload="init()">
+</body>
+
+</html>
+<script src="../js/three.min.js"></script>
+<script src="../js/stats.min.js"></script>
+<script>
+    const {
+        WebGLRenderer,
+        Scene,
+        PerspectiveCamera,
+        BoxGeometry,
+        TextureLoader,
+        MeshNormalMaterial,
+        MeshBasicMaterial,
+        Mesh
+    } = THREE;
+    //  定义全局变量
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let stats = null;
+    let box = null
+    let sphere = null;
+    let circle= null;
+    //  渲染器
+    function initRender(params) {
+        //  实例化渲染器
+        renderer = new WebGLRenderer();
+        //  设置宽高
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        //  添加到dom上
+        document.body.appendChild(renderer.domElement)
+    }
+    // 场景
+    function initScene() {
+        scene = new Scene()
+    }
+    //  相机
+    function initCamera() {
+        //  实例话相机
+        camera = new PerspectiveCamera(45, window.innerWidth / innerHeight, 0.1, 200);
+        camera.position.set(0, 0, 200)
+    }
+    //  创建模型
+    function initMesk() {
+        //  模型
+        let material = new THREE.MeshNormalMaterial();
+     
+
+        //创建立方体
+        box = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), [
+            new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}),
+            new THREE.MeshBasicMaterial({color:0x99ff11,side:THREE.DoubleSide}),
+            new THREE.MeshBasicMaterial({color:0x3398cc,side:THREE.DoubleSide}),
+            new THREE.MeshBasicMaterial({color:0x11ee33,side:THREE.DoubleSide}),
+            new THREE.MeshBasicMaterial({color:0xf774677,side:THREE.DoubleSide}),
+        ]
+        );
+        box.position.set(-50, 20, 0);
+        scene.add(box);
+
+        //创建圆
+        circle = new THREE.Mesh(new THREE.CircleGeometry(5, 32), new THREE.MeshBasicMaterial({color:0xffffff}));
+        circle.position.set(-20, 20, 0);
+        scene.add(circle);
+
+        //创建圆锥
+        cone = new THREE.Mesh(new THREE.ConeGeometry(5, 20, 32), material);
+        cone.position.set(20, 20, 0);
+        scene.add(cone);
+
+        //创建圆柱
+        cylinder = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 20, 32), material);
+        cylinder.position.set(50, 20, 0);
+        scene.add(cylinder);
+
+        //创建球
+        sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 32), material);
+        sphere.position.set(-35, -20, 0);
+        scene.add(sphere);
+
+        //创建平面
+        plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material);
+        plane.position.set(0, -20, 0);
+        scene.add(plane);
+
+        //创建圆环
+        torus = new THREE.Mesh(new THREE.TorusGeometry(10, 3, 16, 100), material);
+        torus.position.set(35, -20, 0);
+        scene.add(torus);
+
+    }
+    //  动画
+    step = 0;
+    function animation() {
+        requestAnimationFrame(animation);
+        step += 0.02
+        box.rotation.set(step,step,step)
+        sphere.rotation.x += 0.1
+        circle.rotation.set(step, step, step);
+        stats.update(); //更新性能检测框
+        renderer.render(scene, camera)
+    }
+    //  新能检测
+    function initStats() {
+        stats = new Stats();
+        console.log(stats);
+        document.body.appendChild(stats.dom)
+    }
+    function init() {
+        initRender()
+        initScene()
+        initCamera()
+        initMesk()
+        initStats()
+        animation()
+    }
+</script>
