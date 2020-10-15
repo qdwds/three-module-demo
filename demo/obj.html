@@ -10,7 +10,8 @@
             padding: 0;
             margin: 0;
         }
-        canvas{
+
+        canvas {
             background: #fff;
         }
     </style>
@@ -24,8 +25,10 @@
 
 <script src="../js/three.min.js"></script>
 <script src="../js/OrbitControls.js"></script>
-<script src="../js//OBJLoader.js"></script>
+<script src="../js/OBJLoader.js"></script>
 <script src="../js/stats.min.js"></script>
+<script src="../js/GLTFLoader.js"></script>
+
 <script>
     const {
         WebGLRenderer,
@@ -38,13 +41,16 @@
         Mesh,
         DDSLoader,
         OBJLoader,
-        AnimationMixer
+        AnimationMixer,
+        GLTFLoader
     } = THREE;
     //  定义全局变量
     let renderer = null;
     let scene = null;
     let camera = null;
     let stats = null;
+    let animationMixer = null
+    let clock = null;
     //  渲染器
     function initRender(params) {
         //  实例化渲染器
@@ -63,28 +69,35 @@
         //  实例话相机
         camera = new PerspectiveCamera(45, window.innerWidth / innerHeight, 0.1, 200);
         camera.position.set(0, 0, 15)
+        clock = new THREE.Clock()
     }
     //  创建模型
     function initMesk() {
         //  创建一个几何图形 正方形
         geometry = new BoxGeometry(2, 2, 2);
         //  创建材质
-        const textureLoader = new TextureLoader()
-        const boxTextureLoader = textureLoader.load('../images/xz.jpeg')
-        material = new MeshBasicMaterial({ map: boxTextureLoader ,side:THREE.DoubleSide});
+        // const textureLoader = new TextureLoader()
+        // const boxTextureLoader = textureLoader.load('../images/xz.jpeg')
+        // material = new MeshBasicMaterial({ map: boxTextureLoader ,side:THREE.DoubleSide});
         // material = new THREE.MeshNormalMaterial(); //自动创建颜色
         //  创建网格
-        mesh = new Mesh(geometry, material);
+        // mesh = new Mesh(geometry, material);
         //  把网格 添加到场景
-        scene.add(mesh)
+        // scene.add(mesh)
     }
-    //  动画
+    //  动画    
+    /**
+     * 设置动画
+     * 实例话时钟
+     * 渲染会话更新
+     */
     function animation() {
         requestAnimationFrame(animation);
         // mesh.rotation.x += 0.01
         // mesh.rotation.y += 0.01
         // mesh.rotation.z += 0.01
         stats.update(); //更新性能检测框
+        animationMixer.update(clock.getDelta())
         renderer.render(scene, camera)
     }
     //  新能检测
@@ -93,48 +106,41 @@
         document.body.appendChild(stats.dom)
     }
     //  模型
-    function initModule(params) {
-        const planeBufferGeometry = new THREE.PlaneBufferGeometry(100, 100)
-        const plane = new THREE.Mesh(planeBufferGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }))
-        scene.add(new THREE.GridHelper(100, 100))
-        plane.rotation.x = -Math.PI / 2
-        var loader = new OBJLoader();//在init函数中，创建loader变量，用于导入模型
-        loader.load('../modules/Lemonade_Can.obj', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
-            obj.scale.set(3,3,3);
-            obj.children[0].material.color.set(0xffffff);
-           
-            console.log(obj);
-            obj.position.x =10
-            scene.add(obj);//将导入的模型添加到场景中
-            scene.add(new THREE.AmbientLight(0xffffff, 1))
-        });
-    }
     function initModule1(params) {
         const planeBufferGeometry = new THREE.PlaneBufferGeometry(100, 100)
         const plane = new THREE.Mesh(planeBufferGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }))
         scene.add(new THREE.GridHelper(100, 100))
         plane.rotation.x = -Math.PI / 2
         var loader = new OBJLoader();//在init函数中，创建loader变量，用于导入模型
-        loader.load('../modules/Lemonade_Can.obj', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
-            obj.scale.set(3,3,3);
-            obj.children[0].material.color.set(0xffffff);
-           
-            console.log(obj);
-            obj.position.x =5
-            scene.add(obj);//将导入的模型添加到场景中
-            scene.add(new THREE.AmbientLight(0xffffff, 1))
-        });
+        animationMixer = new AnimationMixer(scene)
+            loader.load('../modules/nv.obj', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+                console.log(obj);
+                scene.add(new THREE.AmbientLight(0xffffff, 2))
+                scene.add(obj)
+                console.log(obj.children);
+                const animtaionClip = obj.children.find(a => a.name === 'leg')
+                // const animtaionClip = obj.animations.find(animtaionClip => animtaionClip.name == 'Yes');
+                // console.log(animationMixer);
+                let action =animationMixer.clipAction(animtaionClip);
+                // console.log(action);
+                action.play()
+            });
+
+
+
     }
+
     function init() {
         initRender()
         initScene()
         initCamera()
-        initModule()
-        initModule1()
-        initMesk()
+        // initModule()
+        // initMesk()
         initStats()
+
+        initModule1()
         animation()
         new THREE.OrbitControls(camera, renderer.domElement)
-    
+
     }
 </script>

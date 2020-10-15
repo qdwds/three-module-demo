@@ -59,16 +59,16 @@ class Applection {
         document.body.appendChild(this.stats.dom)
 
         //  实例化后 加载loader 
-        this.gltfLoader.load('./Soldier.glb', (gltf) => {
+        this.gltfLoader.load('../modules/xhr.glb', (gltf) => {
             console.log(gltf);
             //  添加模型到舞台当中
             this.scene.add(gltf.scene)
             this.gltf = gltf
             gltf.scene.name = 'soldier'
             //  添加背景光
-            this.scene.add(new THREE.AmbientLight(0xffffff, 1))
+            this.scene.add(new THREE.AmbientLight(0xfff4400, 0.3))
             //  获取动画
-            const animtaionClip = gltf.animations.find(animtaionClip => animtaionClip.name == 'Walk');
+            const animtaionClip = gltf.animations.find(animtaionClip => animtaionClip.name == 'Dance');
             console.log(animtaionClip);
             this.action = this.animationMixer.clipAction(animtaionClip);
             this.action.play()
@@ -169,7 +169,6 @@ class Applection {
         this.animationMixer.update(this.clock.getDelta())
         requestAnimationFrame(() => this.render())
         this.renderer.render(this.scene, this.camera)
-
         this.stats.end()
     }
     Idle(){
