@@ -28,6 +28,8 @@
 <script src="../js//OBJLoader.js"></script>
 <script src="../js/stats.min.js"></script>
 <script src="../js/GLTFLoader.js"></script>
+<script src="../js/OBJLoader.js"></script>
+<script src="../js/ColladaLoader.js"></script>
 
 <script>
     const {
@@ -49,8 +51,8 @@
     let scene = null;
     let camera = null;
     let stats = null;
-    let animationMixer=null
-    let clock= null;
+    let animationMixer = null
+    let clock = null;
     //  渲染器
     function initRender(params) {
         //  实例化渲染器
@@ -73,8 +75,12 @@
     }
     //  创建模型
     function initMesk() {
+        const planeBufferGeometry = new THREE.PlaneBufferGeometry(100, 100)
+        const plane = new THREE.Mesh(planeBufferGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }))
+        scene.add(new THREE.GridHelper(100, 100))
+        plane.rotation.x = -Math.PI / 2
         //  创建一个几何图形 正方形
-        geometry = new BoxGeometry(2, 2, 2);
+        // geometry = new BoxGeometry(2, 2, 2);
         //  创建材质
         // const textureLoader = new TextureLoader()
         // const boxTextureLoader = textureLoader.load('../images/xz.jpeg')
@@ -107,48 +113,65 @@
     }
     //  模型
     function initModule(params) {
-        const planeBufferGeometry = new THREE.PlaneBufferGeometry(100, 100)
-        const plane = new THREE.Mesh(planeBufferGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }))
-        scene.add(new THREE.GridHelper(100, 100))
-        plane.rotation.x = -Math.PI / 2
         var loader = new GLTFLoader();//在init函数中，创建loader变量，用于导入模型
-        loader.load('../modules/xhr.glb', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
-            scene.add(new THREE.AmbientLight(0xffffff, 2))
+        loader.load('../modules/Flamingo.glb', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+            scene.add(new THREE.AmbientLight(0xffffff, 1))
             scene.add(obj.scene);//将导入的模型添加到场景中
+            obj.scene.scale.set(0.01, 0.01, 0.01)
+            obj.scene.position.set(5,3,0)
+            obj.scene.rotation.set(0,0,100)
+            console.log(obj);
+
+            //  动画
+            // console.log(obj.animations);
+            const animtaionClip = obj.animations.find(animtaionClip => {
+                return animtaionClip.name == "flamingo_flyA_"
+            });
+            let action = animationMixer.clipAction(animtaionClip);
+            action.play()
         });
     }
     function initModule1(params) {
-        const planeBufferGeometry = new THREE.PlaneBufferGeometry(100, 100)
-        const plane = new THREE.Mesh(planeBufferGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }))
-        scene.add(new THREE.GridHelper(100, 100))
-        plane.rotation.x = -Math.PI / 2
         var loader = new GLTFLoader();//在init函数中，创建loader变量，用于导入模型
         animationMixer = new AnimationMixer(scene)
         loader.load('../modules/xhr.glb', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
-            console.log(obj);
             obj.scene.position.x = 2
-            scene.add(new THREE.AmbientLight(0xffffff, 2))
-    
+            // scene.add(new THREE.AmbientLight(0xffffff, 1))
             scene.add(obj.scene);//将导入的模型添加到场景中
-            const animtaionClip = obj.animations.find(animtaionClip => animtaionClip.name == 'Yes');
-            console.log(animationMixer);
-            let action =animationMixer.clipAction(animtaionClip);
-            console.log(action);
+            let animtaionClip = obj.animations.find(animtaionClip => animtaionClip.name == 'Running');
+            let action = animationMixer.clipAction(animtaionClip);
             action.play()
         });
     }
 
+    function jsonModule() {
+        var loader = new THREE.OBJLoader();
+        loader.load('../modules/mo.json', function (geo, mat) {
+            var materials = new THREE.MeshFaceMaterial(mat);
+            var mesh = new THREE.Mesh(geo, materials);
+            scene.add(mesh);
+        });
+    }
+    function daeModule() {
+        var loader = new THREE.ColladaLoader();
+        loader.load("../modules/stormtrooper.dae", function (result) {
+            scene.add(result.scene);
+            const animtaionClip = result.animations.find(animtaionClip => animtaionClip.name == 'default');
+            let action = animationMixer.clipAction(animtaionClip);
+            action.play()
+        });
+    }
     function init() {
         initRender()
         initScene()
         initCamera()
-        // initModule()
-        // initMesk()
+        initMesk()
         initStats()
-        
+        initModule()
         initModule1()
+        // jsonModule() //  错误
+        daeModule(0)
         animation()
         new THREE.OrbitControls(camera, renderer.domElement)
-
     }
 </script>

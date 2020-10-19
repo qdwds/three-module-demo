@@ -64,6 +64,8 @@ class Applection {
             //  添加模型到舞台当中
             this.scene.add(gltf.scene)
             this.gltf = gltf
+            //  设置代下
+            gltf.scale.set(2,2,2)
             gltf.scene.name = 'soldier'
             //  添加背景光
             this.scene.add(new THREE.AmbientLight(0xfff4400, 0.3))
