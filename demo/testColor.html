@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>three.js webgl - animation - basic</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+    <div id="info">
+        <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - animation - basic use
+    </div>
+
+    <script type="module">
+        import * as THREE from '../js/three/build/three.module.js';
+        import Stats from '../js/three/examples/jsm/libs/stats.module.js';
+
+        var stats, clock;
+        var scene, camera, renderer, mixer;
+
+        init();
+        animate();
+        function init() {
+            scene = new THREE.Scene();
+            //  透视相机
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.set(25, 25, 50);
+            camera.lookAt(scene.position);
+
+            // 模拟三个坐标轴对象 红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.
+            var axesHelper = new THREE.AxesHelper(10);
+            scene.add(axesHelper);
+
+            //  创建一个几何正方形
+            var geometry = new THREE.BoxBufferGeometry(5, 5, 5);
+            //  设置材质
+            var material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+            //  网格
+            var mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            // create a keyframe track (i.e. a timed sequence of keyframes) for each animated property
+            // Note: the keyframe track type should correspond to the type of the property being animated
+
+            // POSITION
+            var positionKF = new THREE.VectorKeyframeTrack('.position', [0, 1, 2], [0, 0, 0, 30, 0, 0, 0, 0, 0]);
+
+            // SCALE
+            var scaleKF = new THREE.VectorKeyframeTrack('.scale', [0, 1, 2], [1, 1, 1, 2, 2, 2, 1, 1, 1]);
+
+            //回转
+            //旋转应使用四元数并使用THREE.QuaternionKeyframeTrack
+            //内插Euler角（.rotation属性）可能会出现问题，目前不支持
+
+            // 设置绕x轴的旋转 
+            var xAxis = new THREE.Vector3(1, 0, 0);
+            //  数学库 四元素~
+            var qInitial = new THREE.Quaternion().setFromAxisAngle(xAxis, 0);
+            var qFinal = new THREE.Quaternion().setFromAxisAngle(xAxis, Math.PI);
+            //  四元数类型的关键帧轨道。
+            var quaternionKF = new THREE.QuaternionKeyframeTrack('.quaternion', [0, 1, 2], [qInitial.x, qInitial.y, qInitial.z, qInitial.w, qFinal.x, qFinal.y, qFinal.z, qFinal.w, qInitial.x, qInitial.y, qInitial.z, qInitial.w]);
+
+            // 反应颜色变化的关键帧轨道。
+            var colorKF = new THREE.ColorKeyframeTrack('.material.color', [0, 1, 2], [1, 10, 0, 0, 1, 0, 0, 0, 1], THREE.InterpolateDiscrete);
+
+            // 数字类型的关键帧轨道
+            var opacityKF = new THREE.NumberKeyframeTrack('.material.opacity', [0, 1, 2], [1, 0, 1]);
+
+            //用轨道创建动画序列
+            //如果传递的时间值为负，则持续时间将根据传递的音轨数组的时间计算得出
+            var clip = new THREE.AnimationClip('Action', 3, [scaleKF, positionKF, quaternionKF, colorKF, opacityKF]);
+
+            // setup the THREE.AnimationMixer
+            mixer = new THREE.AnimationMixer(mesh);
+
+            // 创建并且设置播放
+            var clipAction = mixer.clipAction(clip);
+            clipAction.play();
+
+            // 渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            //  设置像素比
+            renderer.setPixelRatio(window.devicePixelRatio);
+            //  设置窗口大小
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            //  检测性能
+            stats = new Stats();
+            document.body.appendChild(stats.dom);
+
+            //
+            clock = new THREE.Clock();
+
+            //
+
+            window.addEventListener('resize', onWindowResize, false);
+        }
+        //  设置大小更新视图
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+        }
+
+        function render() {
+            var delta = clock.getDelta();
+            if (mixer) {
+                mixer.update(delta);
+            }
+            renderer.render(scene, camera);
+            stats.update();
+        }
+
+    </script>
+
+</body>
+
+</html>

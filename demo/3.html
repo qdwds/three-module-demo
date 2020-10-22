@@ -156,6 +156,7 @@
         var loader = new THREE.ColladaLoader();
         loader.load("../modules/stormtrooper.dae", function (result) {
             scene.add(result.scene);
+            result.scene.rotation.z = 3.2;
             const animtaionClip = result.animations.find(animtaionClip => animtaionClip.name == 'default');
             let action = animationMixer.clipAction(animtaionClip);
             action.play()

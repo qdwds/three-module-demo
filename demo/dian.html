@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - lightning strike</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - lightning strike</div>
+
+		<script type="module">
+            
+            import * as THREE from '../js/three/build/three.module.js';
+
+			import Stats from '../js/three/examples/jsm/libs/stats.module.js';
+			import { GUI } from '../js/three/examples/jsm/libs/dat.gui.module.js';
+
+			import { OrbitControls } from '../js/three/examples/jsm/controls/OrbitControls.js';
+			import { LightningStrike } from '../js/three/examples/jsm/geometries/LightningStrike.js';
+			import { LightningStorm } from '../js/three/examples/jsm/objects/LightningStorm.js';
+			import { EffectComposer } from '../js/three/examples/jsm/postprocessing/EffectComposer.js';
+			import { RenderPass } from '../js/three/examples/jsm/postprocessing/RenderPass.js';
+			import { OutlinePass } from '../js/three/examples/jsm/postprocessing/OutlinePass.js';
+
+			var container, stats;
+			var scene, renderer, composer, gui;
+			var currentSceneIndex = 0;
+            var currentTime = 0;
+            //  三个场景
+			var sceneCreators = [
+				createConesScene,
+				// createPlasmaBallScene,
+				// createStormScene
+			];
+
+			var clock = new THREE.Clock();
+			var raycaster = new THREE.Raycaster();
+			var mouse = new THREE.Vector2();
+
+			init();
+			animate();
+
+            //  初始化
+			function init() {
+
+				container = document.getElementById( 'container' );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.outputEncoding = THREE.sRGBEncoding;
+
+				container.appendChild( renderer.domElement );
+                //  效果合成器
+				composer = new EffectComposer( renderer );
+
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				createScene();
+
+			}
+            //  创建一个场景
+			function createScene() {
+
+				scene = sceneCreators[ currentSceneIndex ]();
+
+				createGUI();
+
+			}
+            //  缩放大小
+			function onWindowResize() {
+
+				scene.userData.camera.aspect = window.innerWidth / window.innerHeight;
+				scene.userData.camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+                //  效果合成器
+				composer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+            
+			function createGUI() {
+
+				if ( gui ) {
+
+					gui.destroy();
+
+				}
+                //  创建一个gui
+				gui = new GUI( { width: 350 } );
+
+				var sceneFolder = gui.addFolder( "Scene" );
+                scene.userData.sceneIndex = currentSceneIndex;
+                //  选择动画
+				sceneFolder.add( scene.userData, 'sceneIndex', { "Electric Cones": 0, "Plasma Ball": 1, "Storm": 2 } ).name( 'Scene' ).onChange( function ( value ) {
+                    currentSceneIndex = value;
+					createScene();
+				} );
+
+				scene.userData.timeRate = 1;
+				// sceneFolder.add( scene.userData, 'timeRate', scene.userData.canGoBackwardsInTime ? - 1 : 0, 1 ).name( 'Time rate' );
+
+				// sceneFolder.open();
+
+				// var graphicsFolder = gui.addFolder( "Graphics" );
+
+				// graphicsFolder.add( scene.userData, "outlineEnabled" ).name( "Glow enabled" );
+
+				scene.userData.lightningColorRGB = [
+					scene.userData.lightningColor.r * 255,
+					scene.userData.lightningColor.g * 255,
+					scene.userData.lightningColor.b * 255
+				];
+				// graphicsFolder.addColor( scene.userData, 'lightningColorRGB' ).name( 'Color' ).onChange( function ( value ) {
+
+				// 	scene.userData.lightningMaterial.color.setRGB( value[ 0 ], value[ 1 ], value[ 2 ] ).multiplyScalar( 1 / 255 );
+
+				// } );
+				scene.userData.outlineColorRGB = [
+					scene.userData.outlineColor.r * 255,
+					scene.userData.outlineColor.g * 255,
+					scene.userData.outlineColor.b * 255
+				];
+				// graphicsFolder.addColor( scene.userData, 'outlineColorRGB' ).name( 'Glow color' ).onChange( function ( value ) {
+
+				// 	scene.userData.outlineColor.setRGB( value[ 0 ], value[ 1 ], value[ 2 ] ).multiplyScalar( 1 / 255 );
+
+				// } );
+
+				// graphicsFolder.open();
+
+				// var rayFolder = gui.addFolder( "Ray parameters" );
+
+				// rayFolder.add( scene.userData.rayParams, 'straightness', 0, 1 ).name( 'Straightness' );
+				// rayFolder.add( scene.userData.rayParams, 'roughness', 0, 1 ).name( 'Roughness' );
+				// rayFolder.add( scene.userData.rayParams, 'radius0', 0.1, 10 ).name( 'Initial radius' );
+				// rayFolder.add( scene.userData.rayParams, 'radius1', 0.1, 10 ).name( 'Final radius' );
+				// rayFolder.add( scene.userData.rayParams, 'radius0Factor', 0, 1 ).name( 'Subray initial radius' );
+				// rayFolder.add( scene.userData.rayParams, 'radius1Factor', 0, 1 ).name( 'Subray final radius' );
+				// rayFolder.add( scene.userData.rayParams, 'timeScale', 0, 5 ).name( 'Ray time scale' );
+				// rayFolder.add( scene.userData.rayParams, 'subrayPeriod', 0.1, 10 ).name( 'Subray period (s)' );
+				// rayFolder.add( scene.userData.rayParams, 'subrayDutyCycle', 0, 1 ).name( 'Subray duty cycle' );
+
+				// if ( scene.userData.recreateRay ) {
+
+					// Parameters which need to recreate the ray after modification
+
+					// var raySlowFolder = gui.addFolder( "Ray parameters (slow)" );
+
+					// raySlowFolder.add( scene.userData.rayParams, 'ramification', 0, 15 ).step( 1 ).name( 'Ramification' ).onFinishChange( function () {
+
+					// 	scene.userData.recreateRay();
+
+					// } );
+
+					// raySlowFolder.add( scene.userData.rayParams, 'maxSubrayRecursion', 0, 5 ).step( 1 ).name( 'Recursion' ).onFinishChange( function () {
+
+					// 	scene.userData.recreateRay();
+
+					// } );
+
+					// raySlowFolder.add( scene.userData.rayParams, 'recursionProbability', 0, 1 ).name( 'Rec. probability' ).onFinishChange( function () {
+
+					// 	scene.userData.recreateRay();
+
+					// } );
+
+					// raySlowFolder.open();
+
+				}
+
+				// rayFolder.open();
+
+			// }
+
+			//
+
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+				stats.update();
+			}
+
+			function render() {
+                //  重新渲染
+				currentTime += scene.userData.timeRate * clock.getDelta();
+				if ( currentTime < 0 ) {
+					currentTime = 0;
+				}
+
+				scene.userData.render( currentTime );
+
+			}
+            //  创建连接线
+			function createOutline( scene, objectsArray, visibleColor ) {
+				var outlinePass = new OutlinePass( 
+                    new THREE.Vector2( window.innerWidth, window.innerHeight ),
+                    scene, scene.userData.camera, objectsArray 
+                );
+				outlinePass.edgeStrength = 2.5;
+				outlinePass.edgeGlow = 0.7;
+				outlinePass.edgeThickness = 2.8;
+				outlinePass.visibleEdgeColor = visibleColor;
+                outlinePass.hiddenEdgeColor.set( 0 );
+                //  添加 效果合成
+				composer.addPass( outlinePass );
+
+				scene.userData.outlineEnabled = true;
+
+				return outlinePass;
+
+			}
+
+			//  创建圆锥体场景
+
+			function createConesScene() {
+
+				var scene = new THREE.Scene();
+				// scene.background = new THREE.Color( 0xffffff );
+
+				scene.userData.canGoBackwardsInTime = true;
+
+				scene.userData.camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 200, 100000 );
+
+				// 灯
+                //  创建 闪电 颜色
+                scene.userData.lightningColor = new THREE.Color( 0x004daa );
+                //  轮廓颜色
+				scene.userData.outlineColor = new THREE.Color( 0x004daa );
+                //  点光源
+                var posLight = new THREE.PointLight( 0xffffff, 1, 100 );
+                // posLight.position.set( 5000, 5000, 5000 );
+				scene.add( posLight );
+
+				// 地面 
+				// var ground = new THREE.Mesh( 
+                //     //  地表几何体
+                //     new THREE.PlaneBufferGeometry( 200000, 200000 ), 
+                //     //  材质
+                //     // new THREE.MeshPhongMaterial( { color: 0xffffff, shininess: 0 } ) 
+                // );
+				// // ground.rotation.x = - Math.PI * 0.5;
+				// scene.add( ground );
+
+				// 锥体 
+
+                //  两个椎体上下距离
+                var conesDistance = 1000;
+                //  锥体高度
+                var coneHeight = 500;
+                // 锥高半
+				// var coneHeightHalf = coneHeight * 0.5;
+
+				// posLight.position.set( 0, ( conesDistance + coneHeight ) * 0.5, 0 );
+				// posLight.color = scene.userData.outlineColor;
+
+				scene.userData.camera.position.set( 5 * coneHeight, 4 * coneHeight, 18 * coneHeight );
+                
+                //  椎体1
+				var coneMesh1 = new THREE.Mesh( 
+                    new THREE.ConeBufferGeometry( coneHeight * 0.5, coneHeight, 30, 1, false ), 
+                    new THREE.MeshPhongMaterial( { color: 0xFF4400, emissive: 0x1F1F00 } ) 
+                );
+			
+                coneMesh1.position.x = 500;
+                console.log(coneMesh1);
+				scene.add( coneMesh1 );
+
+
+                //  锥体2
+				var coneMesh2 = new THREE.Mesh( 
+                    //  克隆椎体1的大小
+                    new THREE.ConeBufferGeometry( coneHeight * 0.5, coneHeight, 30, 1, false ), 
+                    new THREE.MeshPhongMaterial( { color: 0xff4daa, emissive: 0x1F0202 } ) 
+                );
+                // 设置大小
+                coneMesh2.position.x = 0
+                scene.add(coneMesh2)
+
+
+				// 雷击效果 颜色是通过上面创建出来的
+                scene.userData.lightningMaterial = new THREE.MeshBasicMaterial( { color: scene.userData.lightningColor } );
+                
+                //  右侧选项器的
+				scene.userData.rayParams = {
+					sourceOffset: new THREE.Vector3(),
+					destOffset: new THREE.Vector3(),
+					radius0: 4,
+					radius1: 4,
+					minRadius: 2.5,
+					maxIterations: 7,
+					isEternal: true,
+
+					timeScale: 0.7,
+
+					propagationTimeFactor: 0.05,
+					vanishingTimeFactor: 0.95,
+					subrayPeriod: 3.5,
+					subrayDutyCycle: 0.6,
+					maxSubrayRecursion: 3,
+					ramification: 7,
+					recursionProbability: 0.6,
+
+					roughness: 0.85,
+					straightness: 0.6
+				};
+
+				var lightningStrike;
+				var lightningStrikeMesh;
+				var outlineMeshArray = [];
+                
+                //  每次都重新渲染雷电光线
+				scene.userData.recreateRay = function () {
+					if ( lightningStrikeMesh ) {
+						scene.remove( lightningStrikeMesh );
+                    }
+                    //  3d雷击
+                    lightningStrike = new LightningStrike( scene.userData.rayParams );
+					lightningStrikeMesh = new THREE.Mesh( lightningStrike, scene.userData.lightningMaterial );
+
+					outlineMeshArray.length = 0;
+					outlineMeshArray.push( lightningStrikeMesh );
+					scene.add( lightningStrikeMesh );
+
+				};
+
+				scene.userData.recreateRay();
+
+				// 合成渲染
+                composer.passes = [];
+                //  把场景和相机 天骄到合成器里面
+                composer.addPass( 
+                    new RenderPass( scene, scene.userData.camera )
+                );
+              
+                //  创建连接线
+				createOutline( scene, outlineMeshArray, scene.userData.outlineColor );
+
+				// 控件
+                //  轨道控制器
+                var controls = new OrbitControls( scene.userData.camera, renderer.domElement );
+                console.log(controls);
+                controls.target.y = ( conesDistance + coneHeight ) * 0.5;
+                //  添加惯性
+                controls.enableDamping = true;
+                //  鼠标移动时候的速度
+				controls.dampingFactor = 0.01;
+
+                //移动 视锥 并更新射线位置
+				scene.userData.render = function ( time ) {
+					// coneMesh1.position.set( 
+                    //     //  正弦值
+                    //     Math.sin( 0.5 * time ) * conesDistance * 0.6, 
+                    //     conesDistance + coneHeight,
+                    //     //  余弦值
+                    //     Math.cos( 0.5 * time ) * conesDistance * 0.6 
+                    // );
+                    // coneMesh2.position.set( 
+                    //     Math.sin( 0.9 * time ) * conesDistance, coneHeightHalf,
+                    //      0 
+                    // );
+                    // console.log(lightningStrike.rayParameters.sourceOffset);
+                    console.log(lightningStrike.rayParameters.sourceOffset);
+                    //  震源偏移量
+					// lightningStrike.rayParameters.sourceOffset.copy( coneMesh1.position );
+                    // lightningStrike.rayParameters.sourceOffset.copy( coneMesh2.position );
+                    //  第一个椎体的高度一般 是最顶部
+                    lightningStrike.rayParameters.sourceOffset.y = coneHeight / 2;
+                    //  目的地偏移量
+					// lightningStrike.rayParameters.destOffset.copy( coneMesh2.position );
+					lightningStrike.rayParameters.destOffset.y  = coneHeight / 2;
+					lightningStrike.rayParameters.destOffset.x  = coneHeight
+
+					lightningStrike.update( time );
+
+					controls.update();
+
+                    // Update point light position to the middle of the ray
+                    console.log(lightningStrike.rayParameters.sourceOffset);
+                    console.log( lightningStrike.rayParameters.destOffset);
+					posLight.position.lerpVectors( 
+                        lightningStrike.rayParameters.sourceOffset, 
+                        lightningStrike.rayParameters.destOffset, 0.5 
+                    );
+
+					if ( scene.userData.outlineEnabled ) {
+
+						composer.render();
+
+					}	else {
+
+						renderer.render( scene, scene.userData.camera );
+
+					}
+
+				};
+
+				return scene;
+
+			}
+
+	
+		</script>
+
+	</body>
+</html>

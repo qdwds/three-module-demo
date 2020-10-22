@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正方形</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        canvas {
+            background: #fff;
+        }
+    </style>
+</head>
+
+<body onload="init()">
+</body>
+
+</html>
+
+
+<script src="../js/three.min.js"></script>
+<script src="../js/OrbitControls.js"></script>
+<script src="../js//OBJLoader.js"></script>
+<script src="../js/stats.min.js"></script>
+<script src="../js/GLTFLoader.js"></script>
+<script src="../js/OBJLoader.js"></script>
+<script src="../js/ColladaLoader.js"></script>
+
+<script>
+    const {
+        WebGLRenderer,
+        Scene,
+        PerspectiveCamera,
+        BoxGeometry,
+        TextureLoader,
+        MeshNormalMaterial,
+        MeshBasicMaterial,
+        Mesh,
+        DDSLoader,
+        OBJLoader,
+        AnimationMixer,
+        GLTFLoader
+    } = THREE;
+    //  定义全局变量
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let stats = null;
+    let animationMixer = null
+    let clock = null;
+    let objm = null;
+    //  渲染器
+    function initRender(params) {
+        //  实例化渲染器
+        renderer = new WebGLRenderer();
+        //  设置宽高
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        //  添加到dom上
+        document.body.appendChild(renderer.domElement)
+    }
+    // 场景
+    function initScene() {
+        scene = new Scene()
+        let color = new THREE.Color(0xffffff)
+        scene.background = color
+        animationMixer = new AnimationMixer(scene)
+    }
+    //  相机
+    function initCamera() {
+        //  实例话相机
+        camera = new PerspectiveCamera(45, window.innerWidth / innerHeight, 0.1, 200);
+        camera.position.set(0, 0, 15)
+        clock = new THREE.Clock()
+    }
+    //  创建模型
+    function initMesk() {
+        const planeBufferGeometry = new THREE.PlaneBufferGeometry(100, 100)
+        const plane = new THREE.Mesh(planeBufferGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }))
+        scene.add(new THREE.GridHelper(100, 100))
+        plane.rotation.x = -Math.PI / 2
+    }
+    //  动画    
+    /**
+     * 设置动画
+     * 实例话时钟
+     * 渲染会话更新
+     */
+    function animation() {
+        requestAnimationFrame(animation);
+        stats.update(); //更新性能检测框
+        animationMixer.update(clock.getDelta())
+        renderer.render(scene, camera)
+        // objm.scene.rotation.x+=0.01
+        // objm.scene.rotation.y+=0.01
+        if(objm !== null){
+           objm.scene.position.z += 0.001
+           scene.position.z -= 0.001
+        }
+    }
+    //  新能检测
+    function initStats() {
+        stats = new Stats();
+        document.body.appendChild(stats.dom)
+    }
+
+    //  模型
+    function initModule(params) {
+        var loader = new GLTFLoader();//在init函数中，创建loader变量，用于导入模型
+        loader.load('../modules/Flamingo.glb', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+            objm = obj
+            scene.add(new THREE.AmbientLight(0xffffff, 1))
+            scene.add(obj.scene);//将导入的模型添加到场景中
+            obj.scene.scale.set(0.01, 0.01, 0.01)
+            obj.scene.position.set(0, 1, 0)
+            obj.scene.rotation.set(0, 0, 100)
+            animations()
+        });
+    }
+    let lock = true
+    setInterval(() => {
+        if (lock) {
+            changeModule()
+            lock = false
+        } else {
+            changeModule1()
+            lock = true
+        }
+    }, 700)
+
+
+    function changeModule() {
+        let color =  new THREE.Color(0x00FF00)
+        objm.scene.children[0].material.color = color
+        animations()
+    }
+    function animations() {
+        const animtaionClip = objm.animations.find(animtaionClip => {
+            return animtaionClip.name == "flamingo_flyA_"
+        });
+        let action = animationMixer.clipAction(animtaionClip);
+        action.play()
+    }
+
+    async function changeModule1() {
+        let color =  new THREE.Color(0xffffff)
+        objm.scene.children[0].material.color = color
+    }
+
+    function init() {
+        initRender()
+        initScene()
+        initCamera()
+        initMesk()
+        initStats()
+        initModule()
+        animation()
+        new THREE.OrbitControls(camera, renderer.domElement)
+    }
+</script>
