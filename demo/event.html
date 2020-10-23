@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+
+</html>
+
+<script src="../js//three/build/three.min.js"></script>
+<script src="../js/OrbitControls.js"></script>
+<script src="../js//three/examples/js/loaders/GLTFLoader.js"></script>
+<script type="module">
+    // import * as THREE from '../js/three/build/three.module.js'
+    // console.log(THREE);
+
+    class Event {
+        constructor() {
+            this.scene = null;
+            this.camera = null;
+            this.renderer = null;
+            this.box = null;
+            this.boxMaterial = null;
+            this.vector2 = null;
+            this.gltfLoader = THREE.GLTFLoader;
+            this.init()
+            this.render();
+            new THREE.OrbitControls(this.camera, this.renderer.domElement)
+        }
+
+        init() {
+            //  相机
+            this.camera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                1,
+                10000
+            )
+            this.camera.position.set(500, 800, 1300);
+            this.camera.lookAt(0, 0, 0,);
+
+            //  场地
+            this.scene = new THREE.Scene()
+            //  背景颜色
+            this.scene.background = new THREE.Color(0xf0f0f0)
+
+
+            //  加载模型
+            let gltfLoader = new THREE.GLTFLoader();
+            gltfLoader.load('../modules/Flower.glb', (gltf) => {
+                //  添加模型到舞台当中
+                gltf.scene.scale.set(500, 500, 500)
+                this.scene.add(gltf.scene)
+                //  设置模型姓名
+                gltf.scene.name = 'moduleName'
+                //  添加背景光
+                this.scene.add(new THREE.AmbientLight(0xfff4400, 0.3))
+                console.log(gltf);
+            })
+
+
+            //  网格
+            var gridHelper = new THREE.GridHelper(1000, 20);
+            //  添加网格
+            this.scene.add(gridHelper);
+
+            // 渲染器 渲染相关
+            this.renderer = new THREE.WebGLRenderer({
+
+            })
+            //  设置设备像素比。通常用于避免HiDPI设备上绘图模糊
+            this.renderer.setPixelRatio(window.devicePixelRatio);    //  获取像素比
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(this.renderer.domElement)
+            document.addEventListener('click', (event) => {
+                const x = (event.offsetX / window.innerWidth) * 2 - 1;
+                const y = - (event.offsetY / window.innerHeight) * 2 + 1;
+                //  创建鼠标点击的坐标
+                const mousePoint = new THREE.Vector2(x, y);
+
+                const raycaster = new THREE.Raycaster()
+                //  设置在那个相机
+                raycaster.setFromCamera(mousePoint, this.camera)
+                //  检测那些物体被点击 
+                //  设置true 是让递归是判断， 否则 无法检测到 模型
+                let interects = raycaster.intersectObjects(this.scene.children, true)
+                //  过滤网格 和 舞台 只取 最外层被点击的数据
+
+                //  过滤点击事件
+                let interect = interects.filter(interect => {
+                    //  过滤点击网格
+                    return !(interect.object instanceof THREE.GridHelper)
+                })[0]
+               //   点击时间
+                if(interect && this.isClickSoldier(interect.object)){
+                    alert('点击')
+                }
+            })
+
+
+        }
+
+        render() {
+            requestAnimationFrame(() => this.render())
+            this.renderer.render(this.scene, this.camera)
+        }
+        //  递归判断点击的是否是模型最外面一层
+        isClickSoldier(object) {
+            //  如果是最外层 直接返回
+            if (object.name === 'moduleName') {
+                return object
+                //  如果不是最外层 递归执行
+            } else if (object.parent) {
+                return this.isClickSoldier(object.parent)
+            } else {
+                return null;
+            }
+        }
+    }
+
+    new Event();
+</script>

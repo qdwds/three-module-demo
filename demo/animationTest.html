@@ -22,6 +22,7 @@
 
 </html>
 
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 
 <script src="../js/three.min.js"></script>
 <script src="../js/OrbitControls.js"></script>
@@ -30,7 +31,7 @@
 <script src="../js/GLTFLoader.js"></script>
 <script src="../js/OBJLoader.js"></script>
 <script src="../js/ColladaLoader.js"></script>
-
+<script src="../js/three/examples//jsm//postprocessing//OutlinePass.js"></script>
 <script>
     const {
         WebGLRenderer,
@@ -53,7 +54,7 @@
     let stats = null;
     let animationMixer = null
     let clock = null;
-    let objm = null;
+    let objm = null
     //  渲染器
     function initRender(params) {
         //  实例化渲染器
@@ -66,9 +67,8 @@
     // 场景
     function initScene() {
         scene = new Scene()
-        let color = new THREE.Color(0xffffff)
-        scene.background = color
-        animationMixer = new AnimationMixer(scene)
+        let color = new THREE.Color(0xffffff);
+        scene.background = color;
     }
     //  相机
     function initCamera() {
@@ -92,15 +92,12 @@
      */
     function animation() {
         requestAnimationFrame(animation);
+        // mesh.rotation.x += 0.01
+        // mesh.rotation.y += 0.01
+        // mesh.rotation.z += 0.01
         stats.update(); //更新性能检测框
         animationMixer.update(clock.getDelta())
         renderer.render(scene, camera)
-        // objm.scene.rotation.x+=0.01
-        // objm.scene.rotation.y+=0.01
-        if(objm !== null){
-           objm.scene.position.z += 0.001
-           scene.position.z -= 0.001
-        }
     }
     //  新能检测
     function initStats() {
@@ -108,48 +105,46 @@
         document.body.appendChild(stats.dom)
     }
 
-    //  模型
-    function initModule(params) {
+    function initModule1(params) {
         var loader = new GLTFLoader();//在init函数中，创建loader变量，用于导入模型
-        loader.load('../modules/Flamingo.glb', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+        animationMixer = new AnimationMixer(scene)
+        loader.load('../modules/LeePerrySmith.glb', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
             objm = obj
             scene.add(new THREE.AmbientLight(0xffffff, 1))
             scene.add(obj.scene);//将导入的模型添加到场景中
-            obj.scene.scale.set(0.01, 0.01, 0.01)
-            obj.scene.position.set(0, 1, 0)
-            obj.scene.rotation.set(0, 0, 100)
-            animations()
+            obj.scene.position.x = 2
+            scene.add(obj.scene);//将导入的模型添加到场景中
         });
     }
-    let lock = true
-    setInterval(() => {
-        if (lock) {
-            changeModule()
-            lock = false
-        } else {
-            changeModule1()
+    let lock = true;
+    setInterval(()=>{
+        if(lock){
+            change1()
+            lock = false;
+        }else{
+            change2()
             lock = true
         }
-    }, 700)
+    },1000)
+    function change1() {
+        //  界面背景
+        objm.scene.children[0].material.color =  new THREE.Color('red');
+        console.log( objm.scene.children[0].material.color);
 
-
-    function changeModule() {
-        let color =  new THREE.Color(0x00FF00)
-        objm.scene.children[0].material.color = color
-        console.log(objm.scene.children[0]);
-        animations()
+        //  动画
+        // let animtaionClip = objm.animations.find(animtaionClip => animtaionClip.name == 'Running');
+        // let action = animationMixer.clipAction(animtaionClip);
+        // action.play()
     }
-    function animations() {
-        const animtaionClip = objm.animations.find(animtaionClip => {
-            return animtaionClip.name == "flamingo_flyA_"
-        });
-        let action = animationMixer.clipAction(animtaionClip);
-        action.play()
-    }
-
-    async function changeModule1() {
-        let color =  new THREE.Color(0xffffff)
-        objm.scene.children[0].material.color = color
+    function change2() {
+        
+        objm.scene.children[0].material.color = new THREE.Color('blue');
+        console.log(objm.scene.children[0].material.color);
+        
+        //  动画
+        // let animtaionClip = objm.animations.find(animtaionClip => animtaionClip.name == 'Punch');
+        // let action = animationMixer.clipAction(animtaionClip);
+        // action.play()
     }
 
     function init() {
@@ -158,7 +153,8 @@
         initCamera()
         initMesk()
         initStats()
-        initModule()
+        initModule1()
+        // jsonModule() //  错误
         animation()
         new THREE.OrbitControls(camera, renderer.domElement)
     }
