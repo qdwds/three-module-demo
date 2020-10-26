@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #label {
+            position: absolute;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            line-height: 1;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="label"></div>
+</body>
+
+</html>
+
+
+<script src="../js/three.min.js"></script>
+<script src="../js/OrbitControls.js"></script>
+<script src="../js/GLTFLoader.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+<script>
+    class Event {
+        constructor() {
+            this.scene = null;
+            this.camera = null;
+            this.renderer = null;
+            this.box = null;
+            this.boxMaterial = null;
+            this.vector2 = null;
+            this.gltfLoader = THREE.GLTFLoader;
+            this.interect = null;
+                   
+            this.intersects = null; 
+            this.init()
+            this.modules(0, 0)
+            this.modules(100, 100)
+            this.render();
+            new THREE.OrbitControls(this.camera, this.renderer.domElement)
+            this.events()
+        }
+
+        init(x = 0, z = 0) {
+            //  相机
+            this.camera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                1,
+                10000
+            )
+            this.camera.position.set(500, 800, 1300);
+            this.camera.lookAt(0, 0, 0,);
+
+            //  场地
+            this.scene = new THREE.Scene()
+            //  背景颜色
+            this.scene.background = new THREE.Color(0xf0f0f0)
+
+            //  网格
+            var gridHelper = new THREE.GridHelper(1000, 20);
+            //  添加网格
+            this.scene.add(gridHelper);
+
+            // 渲染器 渲染相关
+            this.renderer = new THREE.WebGLRenderer({
+
+            })
+            //  设置设备像素比。通常用于避免HiDPI设备上绘图模糊
+            this.renderer.setPixelRatio(window.devicePixelRatio);    //  获取像素比
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(this.renderer.domElement)
+        }
+        modules(x, y) {
+            //  模型 却少一个高度值
+            //  加载模型
+            // let gltfLoader = new THREE.GLTFLoader();
+            // gltfLoader.load('../modules/Flower.glb', (gltf) => {
+            //     gltf.scene.position.x = x
+            //     gltf.scene.position.z = z
+            //     //  添加模型到舞台当中
+            //     gltf.scene.scale.set(500, 500, 500)
+            //     this.scene.add(gltf.scene)
+            //     //  设置模型姓名
+            //     gltf.scene.name = 'moduleName'
+            //     //  添加背景光
+            //     this.scene.add(new THREE.AmbientLight(0xfff4400, 0.3))
+            // })
+
+            var sphereGeometry = new THREE.SphereGeometry(50, 50, 50, 50);
+            var sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x3CB371 });
+            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.position.x = x;
+            sphere.position.y = y;
+            sphere.name = "sphere";
+            // sphere.position.z = 200;
+            this.scene.add(sphere);
+        }
+        render() {
+            requestAnimationFrame(() => this.render())
+            this.renderer.render(this.scene, this.camera)
+            console.log(this.intersects);
+            if (this.intersects !== undefined && this.intersects !== null) {
+                this.text(this.intersects)
+                console.log(this.intersects);
+            }
+
+        }
+        //  递归判断点击的是否是模型最外面一层
+        isClickSoldier(object) {
+            //  如果是最外层 直接返回
+            if (object.name === 'moduleName') {
+                return object
+                //  如果不是最外层 递归执行
+            } else if (object.parent) {
+                return this.isClickSoldier(object.parent)
+            } else {
+                return null;
+            }
+        }
+        events() {
+            document.addEventListener('click', (event) => {
+                event.preventDefault();
+                //  创建鼠标点击的坐标
+                const mousePoint = new THREE.Vector2();
+
+                const raycaster = new THREE.Raycaster()
+                mousePoint.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mousePoint.y = - (event.clientY / window.innerHeight) * 2 + 1;
+                //  设置在那个相机
+                raycaster.setFromCamera(mousePoint, this.camera)
+                //  检测那些物体被点击 
+                //  设置true 是让递归是判断， 否则 无法检测到 模型
+                let interects = raycaster.intersectObjects(this.scene.children, true)
+                //  过滤网格 和 舞台 只取 最外层被点击的数据
+                console.log(interects);
+                if (interects.length !== 0 && interects[0].object instanceof THREE.Mesh) {
+                    this.intersects = interects[0].object;
+                } else {
+                    console.log('未选中');
+                }
+
+                //  模型的事件
+                //  过滤点击事件
+                // let interect = interects.filter(interect => {
+                //     //  过滤点击网格
+                //     return !(interect.object instanceof THREE.GridHelper)
+                // })[0]
+
+
+                // //   点击事件
+                // if (interect && this.isClickSoldier(interect.object)) {
+                //     console.log('点击');
+                //     this.interect = interect.object;
+                //     return interect.object;
+                // } 
+            })
+        }
+        text(object) {
+            console.log(object);
+            let halfWidth = window.innerWidth / 2;
+            let halfHeight = window.innerHeight / 2;
+
+            // 逆转相机求出二维坐标
+            let vector = object.position.clone().project(this.camera);
+            console.log(vector.x * halfWidth + halfWidth);
+            console.log(-vector.y * halfHeight + halfHeight - object.position.y);
+            // 修改 div 的位置
+            $("#label").css({
+                display: 'block',
+                left: vector.x * halfWidth + halfWidth,
+                top: -vector.y * halfHeight + halfHeight - object.position.y
+            });
+            // 显示模型信息
+            $("#label").text("name11:" + object.name);
+        }
+    }
+
+    new Event();
+</script>
